@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TestMovingGame</title>
+</head>
+<body style="margin:0; overflow:hidden;">
+
+<p id="CurrentPos">x y</p>
+<canvas id="game"></canvas>
+
+<div style="position: fixed; right: 10px; bottom: 10px;">  
+  <button onclick="SpeedChange()" style="font-size: 18px; padding: 12px 24px;">
+    Speed Change
+  </button>
+  <input id="SpeedInput" style="display:none;">
+  <button id="applySpeed"
+          onclick="applySpeed()"
+          style="display:none; font-size:10px; padding:8px 15px;">
+    Confirm
+  </button>
+</div>
+
+<script>
+let canvas = document.getElementById("game");
+let ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let speed = 5;
+let width = 20;
+let height = 20;
+
+let x = 50;
+let y = 50;
+
+let dPressed = false;
+let aPressed = false;
+let wPressed = false;
+let sPressed = false;
+
+//  RANDOM WALLS
+let walls = [];
+
+for (let i = 0; i < 25; i++) {
+
+  let w = 60 + Math.random() * 120;
+  let h = 20 + Math.random() * 80;
+
+  let wall;
+
+  do {
+    wall = {
+      x: Math.random() * (canvas.width - w),
+      y: Math.random() * (canvas.height - h),
+      w: w,
+      h: h
+    };
+  } while (
+    isColliding(x, y, width, height, wall)
+  );
+
+  walls.push(wall);
+}
+//  COLLISION CHECK
+function isColliding(px, py, pw, ph, wall) {
+  return (
+    px < wall.x + wall.w &&
+    px + pw > wall.x &&
+    py < wall.y + wall.h &&
+    py + ph > wall.y
+  );
+}
+
+//  DRAW
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // walls
+  ctx.fillStyle = "black";
+  for (let wall of walls) {
+    ctx.fillRect(wall.x, wall.y, wall.w, wall.h);
+  }
+
+  // player
+  ctx.fillStyle = "#00ff00";
+  ctx.fillRect(x, y, width, height);
+}
+
+//  CONTROLS
+document.addEventListener("keydown", function(event) {
+  if (event.key === "d") dPressed = true;
+  if (event.key === "a") aPressed = true;
+  if (event.key === "w") wPressed = true;
+  if (event.key === "s") sPressed = true;
+});
+
+document.addEventListener("keyup", function(event) {
+  if (event.key === "d") dPressed = false;
+  if (event.key === "a") aPressed = false;
+  if (event.key === "w") wPressed = false;
+  if (event.key === "s") sPressed = false;
+});
+
+//  GAME LOOP
+function gameLoop() {
+
+  let nextX = x;
+  let nextY = y;
+
+  if (dPressed) nextX += speed;
+  if (aPressed) nextX -= speed;
+  if (wPressed) nextY -= speed;
+  if (sPressed) nextY += speed;
+
+  // screen bounds
+  nextX = Math.max(0, Math.min(nextX, canvas.width - width));
+  nextY = Math.max(0, Math.min(nextY, canvas.height - height));
+
+  let blocked = false;
+
+  for (let wall of walls) {
+    if (isColliding(nextX, nextY, width, height, wall)) {
+      blocked = true;
+      break;
+    }
+  }
+
+  if (!blocked) {
+    x = nextX;
+    y = nextY;
+  }
+
+  document.getElementById("CurrentPos").innerText =
+    "Coordinates: " + x + "  " + y;
+
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+
+//  SPEED CONTROL
+function SpeedChange() {
+  document.getElementById("SpeedInput").style.display = "inline";
+  document.getElementById("applySpeed").style.display = "inline";
+}
+
+function applySpeed() {
+  let value = Number(document.getElementById("SpeedInput").value);
+
+  if (isNaN(value) || value < 1 || value > 20) {
+    document.getElementById("applySpeed").innerText = "1 - 20 only";
+    return;
+  }
+
+  speed = value;
+
+  document.getElementById("applySpeed").innerText = "Confirm";
+  document.getElementById("SpeedInput").style.display = "none";
+  document.getElementById("applySpeed").style.display = "none";
+}
+</script>
+
+</body>
+</html>
